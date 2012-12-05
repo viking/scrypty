@@ -1,6 +1,7 @@
 require 'mkmf'
 
 have_library('rt', 'clock_gettime')
+have_library('crypto', 'AES_set_encrypt_key')
 %w{err.h fcntl.h inttypes.h memory.h stddef.h stdint.h stdlib.h string.h strings.h sys/endian.h sys/param.h sys/stat.h sys/time.h sys/types.h termios.h unistd.h}.each do |header|
   have_header(header)
 end
