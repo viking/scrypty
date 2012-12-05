@@ -145,7 +145,73 @@ scrypt_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
   if (errorcode) {
     raise_scrypt_error(errorcode);
   }
-  out[out_len] = '\0';
+  rb_str_set_len(rb_out, out_len);
+
+  return rb_out;
+}
+
+VALUE
+scrypt_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+  VALUE rb_obj;
+  VALUE rb_data;
+  VALUE rb_password;
+  VALUE rb_maxmem;
+  VALUE rb_maxmemfrac;
+  VALUE rb_maxtime;
+{
+  VALUE rb_out;
+  char *data, *password, *out;
+  size_t data_len, password_len, out_len, maxmem;
+  double maxmemfrac, maxtime;
+  int errorcode;
+
+  if (TYPE(rb_data) == T_STRING) {
+    data = RSTRING_PTR(rb_data);
+    data_len = (size_t) RSTRING_LEN(rb_data);
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (data) must be a String");
+  }
+
+  if (TYPE(rb_password) == T_STRING) {
+    password = RSTRING_PTR(rb_password);
+    password_len = (size_t) RSTRING_LEN(rb_password);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (password) must be a String");
+  }
+
+  if (TYPE(rb_maxmem) == T_FIXNUM) {
+    maxmem = FIX2INT(rb_maxmem);
+  }
+  else {
+    rb_raise(rb_eTypeError, "third argument (maxmem) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_maxmemfrac) || TYPE(rb_maxmemfrac) == T_FLOAT) {
+    maxmemfrac = NUM2DBL(rb_maxmemfrac);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fourth argument (maxmemfrac) must be a Fixnum or Float");
+  }
+
+  if (FIXNUM_P(rb_maxtime) || TYPE(rb_maxtime) == T_FLOAT) {
+    maxtime = NUM2DBL(rb_maxtime);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fifth argument (maxtime) must be a Fixnum or Float");
+  }
+
+  rb_out = rb_str_new(NULL, data_len);
+  out = RSTRING_PTR(rb_out);
+
+  errorcode = scryptdec_buf((const uint8_t *) data, data_len,
+      (uint8_t *) out, &out_len, (const uint8_t *) password, password_len,
+      maxmem, maxmemfrac, maxtime);
+  if (errorcode) {
+    raise_scrypt_error(errorcode);
+  }
+  rb_str_set_len(rb_out, out_len);
 
   return rb_out;
 }
@@ -155,6 +221,7 @@ Init_scrypt_ext(void)
 {
   mScrypt = rb_define_module("Scrypt");
   rb_define_singleton_method(mScrypt, "encrypt", scrypt_encrypt, 5);
+  rb_define_singleton_method(mScrypt, "decrypt", scrypt_decrypt, 5);
 
   eScryptError = rb_define_class_under(mScrypt, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypt, "MemoryLimitError", eScryptError);

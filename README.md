@@ -29,10 +29,18 @@ scrypt uses a few parameters to determine how to encrypt data:
 
 Example:
 
+    require 'scrypt'
+
+    data = "my data"
+    password = "secret"
     maxmem = 0
     maxmemfrac = 0.125
     maxtime = 5.0
-    Scrypt.encrypt("your data here", "secret", maxmem, maxmemfrac, maxtime)
+
+    encrypted = Scrypt.encrypt(data, password, maxmem, maxmemfrac, maxtime)
+    puts "Encrypted data: #{encrypted.inspect}"
+    decrypted = Scrypt.decrypt(encrypted, password, maxmem, maxmemfrac, maxtime)
+    puts "Decrypted data: #{decrypted.inspect}"
 
 ## Contributing
 
