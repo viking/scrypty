@@ -10,7 +10,7 @@ Gem::Specification.new do |gem|
   gem.email         = ["viking@pillageandplunder.net"]
   gem.description   = %q{Uses the scrypt algorithm by Colin Percival to encrypt/decrypt data}
   gem.summary       = %q{Utility to encrypt/decrypt data with the scrypt algorithm}
-  gem.homepage      = "https://github.com/viking/scrypt-full"
+  gem.homepage      = "https://github.com/viking/scrypty"
 
   gem.files         = `git ls-files`.split($/)
   gem.extensions    = gem.files.grep(%r{extconf.rb})
