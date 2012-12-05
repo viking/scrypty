@@ -29,4 +29,4 @@ if $?.exitstatus == 0
   $defs.push("-DHAVE_SYSCTL_HW_USERMEM=1")
 end
 create_header
-create_makefile('scrypt_ext')
+create_makefile('scrypty_ext')

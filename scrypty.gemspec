@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'scrypt/version'
+require 'scrypty/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "scrypt-full"
-  gem.version       = Scrypt::VERSION
+  gem.name          = "scrypty"
+  gem.version       = Scrypty::VERSION
   gem.authors       = ["Jeremy Stephens"]
   gem.email         = ["viking@pillageandplunder.net"]
   gem.description   = %q{Uses the scrypt algorithm by Colin Percival to encrypt/decrypt data}

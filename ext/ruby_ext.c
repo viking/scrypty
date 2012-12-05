@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include "scryptenc.h"
 
-VALUE mScrypt;
+VALUE mScrypty;
 
-VALUE eScryptError;
+VALUE eScryptyError;
 VALUE eMemoryLimitError;
 VALUE eClockTimeError;
 VALUE eDerivedKeyError;
@@ -37,7 +37,7 @@ VALUE eReadError;
  * 13	error reading input file
  */
 static void
-raise_scrypt_error(errorcode)
+raise_scrypty_error(errorcode)
    int errorcode;
 {
   switch (errorcode) {
@@ -84,7 +84,7 @@ raise_scrypt_error(errorcode)
 }
 
 VALUE
-scrypt_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+scrypty_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
   VALUE rb_obj;
   VALUE rb_data;
   VALUE rb_password;
@@ -151,7 +151,7 @@ scrypt_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
 }
 
 VALUE
-scrypt_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+scrypty_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
   VALUE rb_obj;
   VALUE rb_data;
   VALUE rb_password;
@@ -209,7 +209,7 @@ scrypt_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
       (uint8_t *) out, &out_len, (const uint8_t *) password, password_len,
       maxmem, maxmemfrac, maxtime);
   if (errorcode) {
-    raise_scrypt_error(errorcode);
+    raise_scrypty_error(errorcode);
   }
   rb_str_set_len(rb_out, out_len);
 
@@ -217,23 +217,23 @@ scrypt_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
 }
 
 void
-Init_scrypt_ext(void)
+Init_scrypty_ext(void)
 {
-  mScrypt = rb_define_module("Scrypt");
-  rb_define_singleton_method(mScrypt, "encrypt", scrypt_encrypt, 5);
-  rb_define_singleton_method(mScrypt, "decrypt", scrypt_decrypt, 5);
+  mScrypty = rb_define_module("Scrypty");
+  rb_define_singleton_method(mScrypty, "encrypt", scrypty_encrypt, 5);
+  rb_define_singleton_method(mScrypty, "decrypt", scrypty_decrypt, 5);
 
-  eScryptError = rb_define_class_under(mScrypt, "Exception", rb_eException);
-  eMemoryLimitError = rb_define_class_under(mScrypt, "MemoryLimitError", eScryptError);
-  eClockTimeError = rb_define_class_under(mScrypt, "ClockTimeError", eScryptError);
-  eDerivedKeyError = rb_define_class_under(mScrypt, "DerivedKeyError", eScryptError);
-  eSaltError = rb_define_class_under(mScrypt, "SaltError", eScryptError);
-  eOpenSSLError = rb_define_class_under(mScrypt, "OpenSSLError", eScryptError);
-  eInvalidBlockError = rb_define_class_under(mScrypt, "InvalidBlockError", eScryptError);
-  eUnrecognizedFormatError = rb_define_class_under(mScrypt, "UnrecognizedFormatError", eScryptError);
-  eNotEnoughMemoryError = rb_define_class_under(mScrypt, "NotEnoughMemoryError", eScryptError);
-  eTooMuchTimeError = rb_define_class_under(mScrypt, "TooMuchTimeError", eScryptError);
-  eIncorrectPasswordError = rb_define_class_under(mScrypt, "IncorrectPasswordError", eScryptError);
-  eWriteError = rb_define_class_under(mScrypt, "WriteError", eScryptError);
-  eReadError = rb_define_class_under(mScrypt, "ReadError", eScryptError);
+  eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
+  eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);
+  eClockTimeError = rb_define_class_under(mScrypty, "ClockTimeError", eScryptyError);
+  eDerivedKeyError = rb_define_class_under(mScrypty, "DerivedKeyError", eScryptyError);
+  eSaltError = rb_define_class_under(mScrypty, "SaltError", eScryptyError);
+  eOpenSSLError = rb_define_class_under(mScrypty, "OpenSSLError", eScryptyError);
+  eInvalidBlockError = rb_define_class_under(mScrypty, "InvalidBlockError", eScryptyError);
+  eUnrecognizedFormatError = rb_define_class_under(mScrypty, "UnrecognizedFormatError", eScryptyError);
+  eNotEnoughMemoryError = rb_define_class_under(mScrypty, "NotEnoughMemoryError", eScryptyError);
+  eTooMuchTimeError = rb_define_class_under(mScrypty, "TooMuchTimeError", eScryptyError);
+  eIncorrectPasswordError = rb_define_class_under(mScrypty, "IncorrectPasswordError", eScryptyError);
+  eWriteError = rb_define_class_under(mScrypty, "WriteError", eScryptyError);
+  eReadError = rb_define_class_under(mScrypty, "ReadError", eScryptyError);
 }

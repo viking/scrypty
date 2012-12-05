@@ -1,4 +1,4 @@
-# scrypt-full
+# Scrypty
 
 This is a Rubygem that uses the scrypt algorithm to encrypt/decrypt data.
 The 'scrypt' gem only provides support for hashing passwords.
@@ -7,7 +7,7 @@ The 'scrypt' gem only provides support for hashing passwords.
 
 Add this line to your application's Gemfile:
 
-    gem 'scrypt-full'
+    gem 'scrypty'
 
 And then execute:
 
@@ -15,11 +15,11 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install scrypt-full
+    $ gem install scrypty
 
 ## Usage
 
-scrypt uses a few parameters to determine how to encrypt data:
+The scrypt algorithm uses a few parameters to determine how to encrypt data:
 * maxmem - use at most the specified number of bytes of RAM when computing the
   derived encryption key (use 0 for unlimited)
 * maxmemfrac - use at most the specified fraction of the available RAM for
@@ -29,7 +29,7 @@ scrypt uses a few parameters to determine how to encrypt data:
 
 Example:
 
-    require 'scrypt'
+    require 'scrypty'
 
     data = "my data"
     password = "secret"
@@ -37,10 +37,15 @@ Example:
     maxmemfrac = 0.125
     maxtime = 5.0
 
-    encrypted = Scrypt.encrypt(data, password, maxmem, maxmemfrac, maxtime)
+    encrypted = Scrypty.encrypt(data, password, maxmem, maxmemfrac, maxtime)
     puts "Encrypted data: #{encrypted.inspect}"
-    decrypted = Scrypt.decrypt(encrypted, password, maxmem, maxmemfrac, maxtime)
+    decrypted = Scrypty.decrypt(encrypted, password, maxmem, maxmemfrac, maxtime)
     puts "Decrypted data: #{decrypted.inspect}"
+
+## See also
+
+* [scrypt by Colin Percival](http://www.tarsnap.com/scrypt.html)
+* [libscrypt (ChromiumOS source tree)](http://git.chromium.org/gitweb/?p=chromiumos/third_party/libscrypt.git;a=summary)
 
 ## Contributing
 

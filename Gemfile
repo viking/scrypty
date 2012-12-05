@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in scrypt.gemspec
+# Specify your gem's dependencies in scrypty.gemspec
 gemspec
