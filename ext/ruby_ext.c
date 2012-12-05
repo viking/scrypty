@@ -1,4 +1,5 @@
 #include <ruby.h>
+#include <ruby/io.h>
 #include <stdio.h>
 #include "scryptenc.h"
 
@@ -163,7 +164,7 @@ scrypty_buffer(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
 }
 
 VALUE
-scrypty_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+scrypty_encrypt_buffer(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
   VALUE rb_obj;
   VALUE rb_data;
   VALUE rb_password;
@@ -176,7 +177,7 @@ scrypty_encrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxti
 }
 
 VALUE
-scrypty_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+scrypty_decrypt_buffer(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
   VALUE rb_obj;
   VALUE rb_data;
   VALUE rb_password;
@@ -188,12 +189,116 @@ scrypty_decrypt(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxti
       rb_maxtime, 0);
 }
 
+VALUE
+scrypty_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime, encrypt)
+  VALUE rb_obj;
+  VALUE rb_infn;
+  VALUE rb_outfn;
+  VALUE rb_password;
+  VALUE rb_maxmem;
+  VALUE rb_maxmemfrac;
+  VALUE rb_maxtime;
+  int encrypt;
+{
+  VALUE rb_infile, rb_outfile;
+  FILE *in, *out;
+  rb_io_t *in_p, *out_p;
+  char *password;
+  size_t password_len;
+  int errorcode, maxmem;
+  double maxmemfrac, maxtime;
+
+  rb_infile = rb_file_open_str(rb_infn, "rb");
+  rb_outfile = rb_file_open_str(rb_outfn, "wb");
+
+  if (TYPE(rb_password) == T_STRING) {
+    password = RSTRING_PTR(rb_password);
+    password_len = (size_t) RSTRING_LEN(rb_password);
+  }
+  else {
+    rb_raise(rb_eTypeError, "third argument (password) must be a String");
+  }
+
+  if (TYPE(rb_maxmem) == T_FIXNUM) {
+    maxmem = FIX2INT(rb_maxmem);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fourth argument (maxmem) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_maxmemfrac) || TYPE(rb_maxmemfrac) == T_FLOAT) {
+    maxmemfrac = NUM2DBL(rb_maxmemfrac);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fifth argument (maxmemfrac) must be a Fixnum or Float");
+  }
+
+  if (FIXNUM_P(rb_maxtime) || TYPE(rb_maxtime) == T_FLOAT) {
+    maxtime = NUM2DBL(rb_maxtime);
+  }
+  else {
+    rb_raise(rb_eTypeError, "sixth argument (maxtime) must be a Fixnum or Float");
+  }
+
+  GetOpenFile(rb_infile, in_p);
+  in = rb_io_stdio_file(in_p);
+  GetOpenFile(rb_outfile, out_p);
+  out = rb_io_stdio_file(out_p);
+
+  if (encrypt) {
+    errorcode = scryptenc_file(in, out, (const uint8_t *) password,
+        password_len, maxmem, maxmemfrac, maxtime);
+  }
+  else {
+    errorcode = scryptdec_file(in, out, (const uint8_t *) password,
+        password_len, maxmem, maxmemfrac, maxtime);
+  }
+  rb_io_close(rb_infile);
+  rb_io_close(rb_outfile);
+
+  if (errorcode) {
+    raise_scrypty_error(errorcode);
+  }
+
+  return Qnil;
+}
+
+VALUE
+scrypty_encrypt_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+  VALUE rb_obj;
+  VALUE rb_infn;
+  VALUE rb_outfn;
+  VALUE rb_password;
+  VALUE rb_maxmem;
+  VALUE rb_maxmemfrac;
+  VALUE rb_maxtime;
+{
+  return scrypty_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem,
+      rb_maxmemfrac, rb_maxtime, 1);
+}
+
+VALUE
+scrypty_decrypt_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtime)
+  VALUE rb_obj;
+  VALUE rb_infn;
+  VALUE rb_outfn;
+  VALUE rb_password;
+  VALUE rb_maxmem;
+  VALUE rb_maxmemfrac;
+  VALUE rb_maxtime;
+{
+  return scrypty_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem,
+      rb_maxmemfrac, rb_maxtime, 0);
+}
+
 void
 Init_scrypty_ext(void)
 {
   mScrypty = rb_define_module("Scrypty");
-  rb_define_singleton_method(mScrypty, "encrypt", scrypty_encrypt, 5);
-  rb_define_singleton_method(mScrypty, "decrypt", scrypty_decrypt, 5);
+  rb_define_singleton_method(mScrypty, "encrypt", scrypty_encrypt_buffer, 5);
+  rb_define_singleton_method(mScrypty, "decrypt", scrypty_decrypt_buffer, 5);
+  rb_define_singleton_method(mScrypty, "encrypt_file", scrypty_encrypt_file, 6);
+  rb_define_singleton_method(mScrypty, "decrypt_file", scrypty_decrypt_file, 6);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);

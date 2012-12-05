@@ -1,4 +1,5 @@
 require "bundler/gem_tasks"
+require "rake/clean"
 
 file "ext/Makefile" => "ext/extconf.rb" do
   Dir.chdir("ext") do
@@ -14,3 +15,6 @@ end
 
 desc "Compile the scrypty extension"
 task :compile => "ext/scrypty_ext.so"
+
+CLEAN.clear
+CLEAN.include(["ext/*.o", "ext/*.so", "ext/extconf.h", "ext/Makefile"])
