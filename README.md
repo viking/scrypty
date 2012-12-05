@@ -42,6 +42,16 @@ Example:
     decrypted = Scrypty.decrypt(encrypted, password, maxmem, maxmemfrac, maxtime)
     puts "Decrypted data: #{decrypted.inspect}"
 
+    orig_fn = "foo.txt"
+    enc_fn = "foo.dat"
+    dec_fn = "foo-dec.txt"
+
+    File.open(orig_fn, "w") { |f| f.print("my data") }
+    Scrypty.encrypt_file(orig_fn, enc_fn, password, maxmem, maxmemfrac, maxtime)
+    puts "Encrypted file: #{File.read(enc_fn).inspect}"
+    Scrypty.decrypt_file(enc_fn, dec_fn, password, maxmem, maxmemfrac, maxtime)
+    puts "Decrypted file: #{File.read(dec_fn).inspect}"
+
 ## See also
 
 * [scrypt by Colin Percival](http://www.tarsnap.com/scrypt.html)
