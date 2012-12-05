@@ -28,10 +28,10 @@ scrypt uses a few parameters to determine how to encrypt data:
   from the password
 
 Example:
+
     maxmem = 0
     maxmemfrac = 0.125
     maxtime = 5.0
-
     Scrypt.encrypt("your data here", "secret", maxmem, maxmemfrac, maxtime)
 
 ## Contributing
