@@ -20,3 +20,5 @@ ext/*.so
 ext/extconf.h
 ext/mkmf.log
 ext/Makefile
+lib/*.so
+.rbenv-version

@@ -30,10 +30,10 @@
 #define _SCRYPTENC_CPUPERF_H_
 
 /**
- * scryptenc_cpuperf(opps):
+ * scrypty_scryptenc_cpuperf(opps):
  * Estimate the number of salsa20/8 cores which can be executed per second,
  * and return the value via opps.
  */
-int scryptenc_cpuperf(double *);
+int scrypty_scryptenc_cpuperf(double *);
 
 #endif /* !_SCRYPTENC_CPUPERF_H_ */

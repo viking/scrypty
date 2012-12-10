@@ -13,8 +13,24 @@ file "ext/scrypty_ext.so" => FileList["ext/*.c", "ext/*.h", "ext/Makefile"] do
   end
 end
 
+file "lib/scrypty_ext.so" => "ext/scrypty_ext.so" do
+  cp 'ext/scrypty_ext.so', 'lib/scrypty_ext.so'
+end
+
 desc "Compile the scrypty extension"
-task :compile => "ext/scrypty_ext.so"
+task :compile => "lib/scrypty_ext.so"
+
+desc "Prefix C function names"
+task :prefix do
+  names = %w{SHA256Context SHA256_CTX HMAC_SHA256Context HMAC_SHA256_CTX SHA256_Init SHA256_Update SHA256_Final HMAC_SHA256_Init HMAC_SHA256_Update HMAC_SHA256_Final PBKDF2_SHA256 crypto_aesctr_init crypto_aesctr_stream crypto_aesctr_free crypto_scrypt memtouse scryptenc_cpuperf scryptenc_buf scryptdec_buf scryptenc_file scryptdec_file}
+  `git ls-files ext`.chomp.split(/\s+/).each do |filename|
+    data = File.read(filename)
+    names.each do |name|
+      data.gsub!(/(?<!")\b#{name}\b(?!")/m, "scrypty_#{name}")
+    end
+    File.open(filename, "w") { |f| f.write(data) }
+  end
+end
 
 CLEAN.clear
-CLEAN.include(["ext/*.o", "ext/*.so", "ext/extconf.h", "ext/Makefile"])
+CLEAN.include(["ext/*.o", "ext/*.so", "lib/*.so", "ext/extconf.h", "ext/Makefile"])

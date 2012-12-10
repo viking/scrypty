@@ -233,7 +233,7 @@ memlimit_sysconf(size_t * memlimit)
 #endif
 
 int
-memtouse(size_t maxmem, double maxmemfrac, size_t * memlimit)
+scrypty_memtouse(size_t maxmem, double maxmemfrac, size_t * memlimit)
 {
 	size_t sysctl_memlimit, sysinfo_memlimit, rlimit_memlimit;
 	size_t sysconf_memlimit;

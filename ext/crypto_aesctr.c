@@ -45,13 +45,13 @@ struct crypto_aesctr {
 };
 
 /**
- * crypto_aesctr_init(key, nonce):
+ * scrypty_crypto_aesctr_init(key, nonce):
  * Prepare to encrypt/decrypt data with AES in CTR mode, using the provided
  * expanded key and nonce.  The key provided must remain valid for the
  * lifetime of the stream.
  */
 struct crypto_aesctr *
-crypto_aesctr_init(AES_KEY * key, uint64_t nonce)
+scrypty_crypto_aesctr_init(AES_KEY * key, uint64_t nonce)
 {
 	struct crypto_aesctr * stream;
 
@@ -73,13 +73,13 @@ err0:
 }
 
 /**
- * crypto_aesctr_stream(stream, inbuf, outbuf, buflen):
+ * scrypty_crypto_aesctr_stream(stream, inbuf, outbuf, buflen):
  * Generate the next ${buflen} bytes of the AES-CTR stream and xor them with
  * bytes from ${inbuf}, writing the result into ${outbuf}.  If the buffers
  * ${inbuf} and ${outbuf} overlap, they must be identical.
  */
 void
-crypto_aesctr_stream(struct crypto_aesctr * stream, const uint8_t * inbuf,
+scrypty_crypto_aesctr_stream(struct crypto_aesctr * stream, const uint8_t * inbuf,
     uint8_t * outbuf, size_t buflen)
 {
 	uint8_t pblk[16];
@@ -106,11 +106,11 @@ crypto_aesctr_stream(struct crypto_aesctr * stream, const uint8_t * inbuf,
 }
 
 /**
- * crypto_aesctr_free(stream):
+ * scrypty_crypto_aesctr_free(stream):
  * Free the provided stream object.
  */
 void
-crypto_aesctr_free(struct crypto_aesctr * stream)
+scrypty_crypto_aesctr_free(struct crypto_aesctr * stream)
 {
 	int i;
 

@@ -142,7 +142,7 @@ scrypty_buffer(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
     rb_out = rb_str_new(NULL, out_len);
     out = RSTRING_PTR(rb_out);
 
-    errorcode = scryptenc_buf((const uint8_t *) data, data_len,
+    errorcode = scrypty_scryptenc_buf((const uint8_t *) data, data_len,
         (uint8_t *) out, (const uint8_t *) password, password_len,
         maxmem, maxmemfrac, maxtime);
   }
@@ -150,7 +150,7 @@ scrypty_buffer(rb_obj, rb_data, rb_password, rb_maxmem, rb_maxmemfrac, rb_maxtim
     rb_out = rb_str_new(NULL, data_len);
     out = RSTRING_PTR(rb_out);
 
-    errorcode = scryptdec_buf((const uint8_t *) data, data_len,
+    errorcode = scrypty_scryptdec_buf((const uint8_t *) data, data_len,
         (uint8_t *) out, &out_len, (const uint8_t *) password, password_len,
         maxmem, maxmemfrac, maxtime);
   }
@@ -246,11 +246,11 @@ scrypty_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem, rb_maxmemfrac, r
   out = rb_io_stdio_file(out_p);
 
   if (encrypt) {
-    errorcode = scryptenc_file(in, out, (const uint8_t *) password,
+    errorcode = scrypty_scryptenc_file(in, out, (const uint8_t *) password,
         password_len, maxmem, maxmemfrac, maxtime);
   }
   else {
-    errorcode = scryptdec_file(in, out, (const uint8_t *) password,
+    errorcode = scrypty_scryptdec_file(in, out, (const uint8_t *) password,
         password_len, maxmem, maxmemfrac, maxtime);
   }
   rb_io_close(rb_infile);
