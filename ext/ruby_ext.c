@@ -377,7 +377,8 @@ scrypty_params(rb_obj, rb_memlimit, rb_opslimit)
   double opslimit;
   double maxN, maxrp;
   int logN;
-  uint32_t r, p;
+  uint64_t N = 0;
+  uint32_t r = 0, p = 0;
 
   max_size = (size_t) -1;
 
@@ -420,7 +421,8 @@ scrypty_params(rb_obj, rb_memlimit, rb_opslimit)
     /* Set N based on the memory limit. */
     maxN = memlimit / (r * 128);
     for (logN = 1; logN < 63; logN += 1) {
-      if ((uint64_t)(1) << logN > maxN / 2)
+      N = (uint64_t)(1) << logN;
+      if (N > maxN / 2)
         break;
     }
 
@@ -431,7 +433,7 @@ scrypty_params(rb_obj, rb_memlimit, rb_opslimit)
     p = (uint32_t)(maxrp) / r;
   }
 
-  rb_result = rb_ary_new3(3, INT2FIX(logN), UINT2NUM(r), UINT2NUM(p));
+  rb_result = rb_ary_new3(3, UINT2NUM(N), UINT2NUM(r), UINT2NUM(p));
   return rb_result;
 };
 
