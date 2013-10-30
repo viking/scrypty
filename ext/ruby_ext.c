@@ -6,6 +6,8 @@
 #include "scryptenc_cpuperf.h"
 #include "memlimit.h"
 #include "crypto_scrypt.h"
+#include "crypto_aesctr.h"
+#include "sha256.h"
 
 VALUE mScrypty;
 
@@ -528,6 +530,114 @@ scrypty_dk(rb_obj, rb_password, rb_salt, rb_n, rb_r, rb_p, rb_keylen)
   return rb_dk;
 }
 
+VALUE
+scrypty_encrypt_raw(rb_obj, rb_data, rb_dk)
+  VALUE rb_obj;
+  VALUE rb_data;
+  VALUE rb_dk;
+{
+  VALUE rb_out;
+  uint8_t *data, *dk, *out, *key_enc, *key_hmac;
+  uint8_t hbuf[32];
+  size_t data_len;
+  scrypty_HMAC_SHA256_CTX hctx;
+  AES_KEY key_enc_exp;
+  struct crypto_aesctr *AES;
+
+  if (TYPE(rb_data) == T_STRING) {
+    data = (uint8_t *) RSTRING_PTR(rb_data);
+    data_len = (size_t) RSTRING_LEN(rb_data);
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (data) must be a String");
+  }
+
+  if (TYPE(rb_dk) == T_STRING) {
+    dk = (uint8_t *) RSTRING_PTR(rb_dk);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (dk) must be a String");
+  }
+  key_enc = dk;
+  key_hmac = &dk[32];
+
+  rb_out = rb_str_buf_new(data_len + 32);
+  out = (uint8_t *) RSTRING_PTR(rb_out);
+
+  /* Encrypt data. */
+  if (AES_set_encrypt_key(key_enc, 256, &key_enc_exp))
+    rb_raise(eOpenSSLError, "OpenSSL error");
+
+  if ((AES = scrypty_crypto_aesctr_init(&key_enc_exp, 0)) == NULL)
+    rb_raise(rb_eNoMemError, "couldn't allocate memory");
+
+  scrypty_crypto_aesctr_stream(AES, data, out, data_len);
+  scrypty_crypto_aesctr_free(AES);
+
+  /* Add signature. */
+  scrypty_HMAC_SHA256_Init(&hctx, key_hmac, 32);
+  scrypty_HMAC_SHA256_Update(&hctx, out, data_len);
+  scrypty_HMAC_SHA256_Final(hbuf, &hctx);
+  memcpy(&out[data_len], hbuf, 32);
+
+  rb_str_set_len(rb_out, data_len + 32);
+  return rb_out;
+}
+
+VALUE
+scrypty_decrypt_raw(rb_obj, rb_data, rb_dk)
+  VALUE rb_obj;
+  VALUE rb_data;
+  VALUE rb_dk;
+{
+  VALUE rb_out;
+  uint8_t *data, *dk, *out, *key_enc, *key_hmac;
+  uint8_t hbuf[32];
+  size_t data_len;
+  scrypty_HMAC_SHA256_CTX hctx;
+  AES_KEY key_enc_exp;
+  struct crypto_aesctr *AES;
+
+  if (TYPE(rb_data) == T_STRING) {
+    data = (uint8_t *) RSTRING_PTR(rb_data);
+    data_len = (size_t) RSTRING_LEN(rb_data);
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (data) must be a String");
+  }
+
+  if (TYPE(rb_dk) == T_STRING) {
+    dk = (uint8_t *) RSTRING_PTR(rb_dk);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (dk) must be a String");
+  }
+  key_enc = dk;
+  key_hmac = &dk[32];
+
+  rb_out = rb_str_buf_new(data_len - 32);
+  out = (uint8_t *) RSTRING_PTR(rb_out);
+
+  /* Decrypt data. */
+  if (AES_set_encrypt_key(key_enc, 256, &key_enc_exp))
+    rb_raise(eOpenSSLError, "OpenSSL error");
+  if ((AES = scrypty_crypto_aesctr_init(&key_enc_exp, 0)) == NULL)
+    rb_raise(rb_eNoMemError, "couldn't allocate memory");
+
+  scrypty_crypto_aesctr_stream(AES, data, out, data_len - 32);
+  scrypty_crypto_aesctr_free(AES);
+
+  /* Verify signature. */
+  scrypty_HMAC_SHA256_Init(&hctx, key_hmac, 32);
+  scrypty_HMAC_SHA256_Update(&hctx, data, data_len - 32);
+  scrypty_HMAC_SHA256_Final(hbuf, &hctx);
+  if (memcmp(hbuf, &data[data_len - 32], 32))
+    rb_raise(eInvalidBlockError, "data is not a valid scrypt-encrypted block");
+
+  rb_str_set_len(rb_out, data_len - 32);
+  return rb_out;
+}
+
 void
 Init_scrypty_ext(void)
 {
@@ -540,6 +650,8 @@ Init_scrypty_ext(void)
   rb_define_singleton_method(mScrypty, "opslimit", scrypty_opslimit, 1);
   rb_define_singleton_method(mScrypty, "params", scrypty_params, 2);
   rb_define_singleton_method(mScrypty, "dk", scrypty_dk, 6);
+  rb_define_singleton_method(mScrypty, "encrypt_raw", scrypty_encrypt_raw, 2);
+  rb_define_singleton_method(mScrypty, "decrypt_raw", scrypty_decrypt_raw, 2);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);

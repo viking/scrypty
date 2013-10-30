@@ -25,9 +25,20 @@ class TestScrypty < Test::Unit::TestCase
 
   test 'dk' do
     memlimit = Scrypty.memlimit(2 ** 27, 0.5)
-    opslimit = Scrypty.opslimit(5)
+    opslimit = Scrypty.opslimit(2)
     n, r, p = Scrypty.params(memlimit, opslimit)
     dk = Scrypty.dk("secret", SecureRandom.random_bytes(32), n, r, p, 64)
     assert_equal 64, dk.length
+  end
+
+  test 'raw roundtrip' do
+    memlimit = Scrypty.memlimit(2 ** 27, 0.5)
+    opslimit = Scrypty.opslimit(2)
+    n, r, p = Scrypty.params(memlimit, opslimit)
+    dk = Scrypty.dk("secret", SecureRandom.random_bytes(32), n, r, p, 64)
+
+    ciphertext = Scrypty.encrypt_raw("foobar", dk);
+    plaintext = Scrypty.decrypt_raw(ciphertext, dk);
+    assert_equal "foobar", plaintext
   end
 end
