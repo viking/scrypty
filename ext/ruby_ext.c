@@ -2,6 +2,7 @@
 #include <ruby/io.h>
 #include <stdio.h>
 #include "scryptenc.h"
+#include "memlimit.h"
 
 VALUE mScrypty;
 
@@ -291,6 +292,49 @@ scrypty_decrypt_file(rb_obj, rb_infn, rb_outfn, rb_password, rb_maxmem, rb_maxme
       rb_maxmemfrac, rb_maxtime, 0);
 }
 
+VALUE
+scrypty_memlimit(rb_obj, rb_maxmem, rb_maxmemfrac)
+  VALUE rb_obj;
+  VALUE rb_maxmem;
+  VALUE rb_maxmemfrac;
+{
+  long l_maxmem;
+  size_t maxmem, memlimit, max_size;
+  double maxmemfrac;
+
+  max_size = (size_t) -1;
+
+  if (TYPE(rb_maxmem) == T_FIXNUM) {
+    l_maxmem = FIX2LONG(rb_maxmem);
+
+    if (l_maxmem < 0) {
+      rb_raise(rb_eArgError, "maxmem (%ld) must not be less than 0", l_maxmem);
+    }
+    else if ((unsigned long) l_maxmem > (unsigned long) max_size) {
+      rb_raise(rb_eArgError, "maxmem (%ld) cannot exceed %zu", l_maxmem, max_size);
+    }
+    else {
+      maxmem = (size_t) l_maxmem;
+    }
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (maxmem) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_maxmemfrac) || TYPE(rb_maxmemfrac) == T_FLOAT) {
+    maxmemfrac = NUM2DBL(rb_maxmemfrac);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (maxmemfrac) must be a Fixnum or Float");
+  }
+
+  if (scrypty_memtouse(maxmem, maxmemfrac, &memlimit) != 0) {
+    rb_raise(rb_eRuntimeError, "could not determine memory limit");
+  }
+
+  return INT2FIX(memlimit);
+}
+
 void
 Init_scrypty_ext(void)
 {
@@ -299,6 +343,7 @@ Init_scrypty_ext(void)
   rb_define_singleton_method(mScrypty, "decrypt", scrypty_decrypt_buffer, 5);
   rb_define_singleton_method(mScrypty, "encrypt_file", scrypty_encrypt_file, 6);
   rb_define_singleton_method(mScrypty, "decrypt_file", scrypty_decrypt_file, 6);
+  rb_define_singleton_method(mScrypty, "memlimit", scrypty_memlimit, 2);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);

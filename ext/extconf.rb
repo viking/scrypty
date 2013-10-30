@@ -1,7 +1,21 @@
 require 'mkmf'
 
+dir_config("openssl")
+
+result = pkg_config("openssl") && have_header("openssl/ssl.h")
+
+unless result
+  result = have_header("openssl/ssl.h")
+  result &&= %w[crypto libeay32].any? {|lib| have_library(lib, "AES_set_encrypt_key")}
+  result &&= %w[ssl ssleay32].any? {|lib| have_library(lib, "AES_set_encrypt_key")}
+  unless result
+    Logging::message "=== Checking for required stuff failed. ===\n"
+    Logging::message "Makefile wasn't created. Fix the errors above.\n"
+    exit 1
+  end
+end
+
 have_library('rt', 'clock_gettime')
-have_library('crypto', 'AES_set_encrypt_key')
 %w{err.h fcntl.h inttypes.h memory.h stddef.h stdint.h stdlib.h string.h strings.h sys/endian.h sys/param.h sys/stat.h sys/time.h sys/types.h termios.h unistd.h}.each do |header|
   have_header(header)
 end

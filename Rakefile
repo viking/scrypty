@@ -1,4 +1,5 @@
 require "bundler/gem_tasks"
+require "rake/testtask"
 require "rake/clean"
 
 file "ext/Makefile" => "ext/extconf.rb" do
@@ -31,6 +32,13 @@ task :prefix do
     File.open(filename, "w") { |f| f.write(data) }
   end
 end
+
+Rake::TestTask.new do |t|
+  t.test_files = FileList['test/test_*.rb']
+  t.verbose = true
+end
+task :test => :compile
+task :default => :test
 
 CLEAN.clear
 CLEAN.include(["ext/*.o", "ext/*.so", "lib/*.so", "ext/extconf.h", "ext/Makefile"])
