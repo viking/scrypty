@@ -363,6 +363,78 @@ scrypty_opslimit(rb_obj, rb_maxtime)
   return DBL2NUM(opslimit);
 }
 
+/* Calculate parameters used for creating a derived key with the
+ * scrypt algorithm. */
+VALUE
+scrypty_params(rb_obj, rb_memlimit, rb_opslimit)
+  VALUE rb_obj;
+  VALUE rb_memlimit;
+  VALUE rb_opslimit;
+{
+  VALUE rb_result;
+  long l_memlimit;
+  size_t memlimit, max_size;
+  double opslimit;
+  double maxN, maxrp;
+  int logN;
+  uint32_t r, p;
+
+  max_size = (size_t) -1;
+
+  if (TYPE(rb_memlimit) == T_FIXNUM) {
+    l_memlimit = FIX2LONG(rb_memlimit);
+
+    if (l_memlimit < 0) {
+      rb_raise(rb_eArgError, "memlimit (%ld) must not be less than 0", l_memlimit);
+    }
+    else if ((unsigned long) l_memlimit > (unsigned long) max_size) {
+      rb_raise(rb_eArgError, "memlimit (%ld) cannot exceed %zu", l_memlimit, max_size);
+    }
+    else {
+      memlimit = (size_t) l_memlimit;
+    }
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (memlimit) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_opslimit) || TYPE(rb_opslimit) == T_FLOAT) {
+    opslimit = NUM2DBL(rb_opslimit);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (opslimit) must be a Fixnum or Float");
+  }
+
+  /* Fix r = 8 for now. */
+  r = 8;
+
+  if (opslimit < memlimit/32) {
+    /* Set p = 1 and choose N based on the CPU limit. */
+    p = 1;
+    maxN = opslimit / (r * 4);
+    for (logN = 1; logN < 63; logN += 1) {
+      if ((uint64_t)(1) << logN > maxN / 2)
+        break;
+    }
+  } else {
+    /* Set N based on the memory limit. */
+    maxN = memlimit / (r * 128);
+    for (logN = 1; logN < 63; logN += 1) {
+      if ((uint64_t)(1) << logN > maxN / 2)
+        break;
+    }
+
+    /* Choose p based on the CPU limit. */
+    maxrp = (opslimit / 4) / ((uint64_t)(1) << logN);
+    if (maxrp > 0x3fffffff)
+      maxrp = 0x3fffffff;
+    p = (uint32_t)(maxrp) / r;
+  }
+
+  rb_result = rb_ary_new3(3, INT2FIX(logN), UINT2NUM(r), UINT2NUM(p));
+  return rb_result;
+};
+
 void
 Init_scrypty_ext(void)
 {
@@ -373,6 +445,7 @@ Init_scrypty_ext(void)
   rb_define_singleton_method(mScrypty, "decrypt_file", scrypty_decrypt_file, 6);
   rb_define_singleton_method(mScrypty, "memlimit", scrypty_memlimit, 2);
   rb_define_singleton_method(mScrypty, "opslimit", scrypty_opslimit, 1);
+  rb_define_singleton_method(mScrypty, "params", scrypty_params, 2);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);
