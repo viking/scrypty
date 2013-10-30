@@ -1,9 +1,11 @@
 #include <ruby.h>
 #include <ruby/io.h>
 #include <stdio.h>
+#include <errno.h>
 #include "scryptenc.h"
 #include "scryptenc_cpuperf.h"
 #include "memlimit.h"
+#include "crypto_scrypt.h"
 
 VALUE mScrypty;
 
@@ -333,7 +335,7 @@ scrypty_memlimit(rb_obj, rb_maxmem, rb_maxmemfrac)
     rb_raise(rb_eRuntimeError, "could not determine memory limit");
   }
 
-  return INT2FIX(memlimit);
+  return SIZET2NUM(memlimit);
 }
 
 VALUE
@@ -437,6 +439,95 @@ scrypty_params(rb_obj, rb_memlimit, rb_opslimit)
   return rb_result;
 };
 
+VALUE
+scrypty_dk(rb_obj, rb_password, rb_salt, rb_n, rb_r, rb_p, rb_keylen)
+  VALUE rb_obj;
+  VALUE rb_password;
+  VALUE rb_salt;
+  VALUE rb_n;
+  VALUE rb_r;
+  VALUE rb_p;
+  VALUE rb_keylen;
+{
+  VALUE rb_dk;
+  const uint8_t *password, *salt;
+  uint8_t *dk;
+  uint64_t N;
+  uint32_t r, p;
+  size_t password_len, salt_len, keylen;
+
+  if (TYPE(rb_password) == T_STRING) {
+    password = (const uint8_t *) RSTRING_PTR(rb_password);
+    password_len = (size_t) RSTRING_LEN(rb_password);
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (password) must be a String");
+  }
+
+  if (TYPE(rb_salt) == T_STRING) {
+    salt = (const uint8_t *) RSTRING_PTR(rb_salt);
+    salt_len = (size_t) RSTRING_LEN(rb_salt);
+  }
+  else {
+    rb_raise(rb_eTypeError, "second argument (salt) must be a String");
+  }
+
+  if (FIXNUM_P(rb_n)) {
+    N = (uint64_t) NUM2ULL(rb_n);
+  }
+  else {
+    rb_raise(rb_eTypeError, "third argument (n) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_r)) {
+    r = (uint32_t) NUM2ULONG(rb_r);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fourth argument (r) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_p)) {
+    p = (uint32_t) NUM2ULONG(rb_p);
+  }
+  else {
+    rb_raise(rb_eTypeError, "fifth argument (p) must be a Fixnum");
+  }
+
+  if (FIXNUM_P(rb_keylen)) {
+    keylen = NUM2SIZET(rb_keylen);
+  }
+  else {
+    rb_raise(rb_eTypeError, "sixth argument (keylen) must be a Fixnum");
+  }
+
+  rb_dk = rb_str_buf_new(keylen);
+  dk = (uint8_t *) RSTRING_PTR(rb_dk);
+
+  if (scrypty_crypto_scrypt(password, password_len, salt,
+        salt_len, N, r, p, dk, keylen) != 0) {
+
+    switch (errno) {
+      case EFBIG:
+        rb_raise(rb_eRuntimeError, "parameters were too big");
+        break;
+
+      case EINVAL:
+        rb_raise(rb_eRuntimeError, "parameters were invalid");
+        break;
+
+      case ENOMEM:
+        rb_raise(rb_eNoMemError, "not enough memory to create derived key");
+        break;
+
+      default:
+        rb_raise(rb_eRuntimeError, "%s", strerror(errno));
+    }
+  }
+
+  rb_str_set_len(rb_dk, keylen);
+  return rb_dk;
+}
+
 void
 Init_scrypty_ext(void)
 {
@@ -448,6 +539,7 @@ Init_scrypty_ext(void)
   rb_define_singleton_method(mScrypty, "memlimit", scrypty_memlimit, 2);
   rb_define_singleton_method(mScrypty, "opslimit", scrypty_opslimit, 1);
   rb_define_singleton_method(mScrypty, "params", scrypty_params, 2);
+  rb_define_singleton_method(mScrypty, "dk", scrypty_dk, 6);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);
