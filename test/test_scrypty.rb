@@ -6,4 +6,9 @@ class TestScrypty < Test::Unit::TestCase
     result = Scrypty.memlimit(2 ** 27, 0.5)
     assert result >= (2 ** 27)
   end
+
+  test 'opslimit' do
+    result = Scrypty.opslimit(5)
+    assert result >= 32768
+  end
 end

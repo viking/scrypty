@@ -2,6 +2,7 @@
 #include <ruby/io.h>
 #include <stdio.h>
 #include "scryptenc.h"
+#include "scryptenc_cpuperf.h"
 #include "memlimit.h"
 
 VALUE mScrypty;
@@ -335,6 +336,33 @@ scrypty_memlimit(rb_obj, rb_maxmem, rb_maxmemfrac)
   return INT2FIX(memlimit);
 }
 
+VALUE
+scrypty_opslimit(rb_obj, rb_maxtime)
+  VALUE rb_obj;
+  VALUE rb_maxtime;
+{
+  double opps, maxtime, opslimit;
+
+  if (FIXNUM_P(rb_maxtime) || TYPE(rb_maxtime) == T_FLOAT) {
+    maxtime = NUM2DBL(rb_maxtime);
+  }
+  else {
+    rb_raise(rb_eTypeError, "first argument (maxtime) must be a Fixnum or Float");
+  }
+
+  /* Figure out how fast the CPU is. */
+  if (scrypty_scryptenc_cpuperf(&opps) != 0) {
+    rb_raise(rb_eRuntimeError, "could not determine CPU performance");
+  }
+  opslimit = opps * maxtime;
+
+  /* Allow a minimum of 2^15 salsa20/8 cores. */
+  if (opslimit < 32768)
+    opslimit = 32768;
+
+  return DBL2NUM(opslimit);
+}
+
 void
 Init_scrypty_ext(void)
 {
@@ -344,6 +372,7 @@ Init_scrypty_ext(void)
   rb_define_singleton_method(mScrypty, "encrypt_file", scrypty_encrypt_file, 6);
   rb_define_singleton_method(mScrypty, "decrypt_file", scrypty_decrypt_file, 6);
   rb_define_singleton_method(mScrypty, "memlimit", scrypty_memlimit, 2);
+  rb_define_singleton_method(mScrypty, "opslimit", scrypty_opslimit, 1);
 
   eScryptyError = rb_define_class_under(mScrypty, "Exception", rb_eException);
   eMemoryLimitError = rb_define_class_under(mScrypty, "MemoryLimitError", eScryptyError);
